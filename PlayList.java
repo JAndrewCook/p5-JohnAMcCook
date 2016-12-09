@@ -1,3 +1,4 @@
+
 /**
  * @author john.cook
  */
@@ -119,16 +120,16 @@ public class PlayList implements MyTunesPlayListInterface {
 					+ "\n------------------";
 		}
 	}
-	
+
 	/**
 	 * constructor to add the songs
 	 */
-	public void addPlayList(File file) {
-		//PlayList list = null;
+	public PlayList(File file) {
+		// PlayList list = null;
 		try {
 			Scanner scan = new Scanner(file);
 			String playListName = scan.nextLine().trim();
-			//list = new PlayList(playListName);
+			// list = new PlayList(playListName);
 			while (scan.hasNextLine()) {
 				String title = scan.nextLine().trim();
 				String artist = scan.nextLine().trim();
@@ -149,7 +150,6 @@ public class PlayList implements MyTunesPlayListInterface {
 		}
 	}
 
-
 	@Override
 	public void playSong(Song song) {
 		// TODO Auto-generated method stub
@@ -159,31 +159,80 @@ public class PlayList implements MyTunesPlayListInterface {
 	@Override
 	public void stop() {
 		// TODO Auto-generated method stub
-
+		if(playing != null){
+			playing.stop();
+			playing = null;
+		}
 	}
 
 	@Override
 	public Song[] getSongArray() {
 		// TODO Auto-generated method stub
-		return null;
+		Song[] copy = new Song[songList.size()];
+
+		for (int i = 0; i < songList.size(); i++) {
+			copy[i] = songList.get(i);
+		}
+		return copy;
+	}
+	
+	public Song[][] getSongSquare() {
+		int sqrt = (int) Math.ceil(Math.sqrt(songList.size()));
+		Song[][] grid = new Song[(int) sqrt][(int) sqrt];
+		for(int row=0; row<grid.length; row++){
+			for(int col=0; col<grid[row].length; col++){
+				grid[row][col] = this.songList.get(((row*sqrt)+col)%this.songList.size());
+			}
+		}
+		return grid;
 	}
 
 	@Override
 	public int moveUp(int index) {
 		// TODO Auto-generated method stub
-		return 0;
+		if(index == 0){
+			Song move = songList.get(0);
+			songList.remove(0);
+			songList.add(move);
+			index = songList.size()-1;
+			return index;
+		}else{
+			Song move = songList.get(index);
+			songList.remove(move);
+			songList.add(index-1, move);
+			index -= 1;
+			return index;
+		}
 	}
 
 	@Override
 	public int moveDown(int index) {
 		// TODO Auto-generated method stub
-		return 0;
+		if(index == songList.size()-1){
+			Song move = songList.get(index);
+			songList.remove(index);
+			songList.add(0, move);
+			index = 0;
+			return index;
+		}else{
+			Song move = songList.get(index);
+			songList.remove(move);
+			songList.add(index+1, move);
+			index += 1;
+			return index;
+		}
 	}
 
 	@Override
 	public Song[][] getMusicSquare() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public int get(int i) {
+		// TODO Auto-generated method stub
+		int index = i;
+		return index;
 	}
 
 }

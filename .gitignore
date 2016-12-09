@@ -4,3 +4,10 @@
 /Song.class
 /MyTunesGUIPanel.class
 /MyTunesGUIPanel$PlayListListener.class
+/MyTunesGUIPanel$ControlListener.class
+/MyTunesGUIPanel$ButtonListener.class
+/MyTunesGUIPanel$PhotoSquareListener.class
+/MyTunesGUIPanel$UpDownListener.class
+/MyTunesGUIPanel$SongSquareListener.class
+/MyTunesGUIPanel$ARListener.class
+/MyTunesGUIPanel$TimerListener.class
