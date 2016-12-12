@@ -28,9 +28,12 @@ public class MyTunesGUIPanel extends JPanel {
 	private PlayList list;
 	private String playingTitle;
 	private String playingArtist;
+	private int sqrt;
+	private int time;
+	private int timeRemaining;
 
 	private JList<Song> songList = new JList<Song>();
-	
+
 	private JPanel gridPanel;
 	private JPanel controlPanel;
 
@@ -49,16 +52,15 @@ public class MyTunesGUIPanel extends JPanel {
 
 	private ImageIcon pIcon = new ImageIcon("images/play-32.gif");
 	private ImageIcon sIcon = new ImageIcon("images/pause-32.gif");
-	
+
 	private JButton[][] grid;
-	
+
 	private int index;
 	private Timer timer;
 
 	public MyTunesGUIPanel() {
 		// creating the timer
-		timer = new Timer(0, new TimerListener());
-		timer.setRepeats(false);
+		initTimer();
 		// setting the layout
 		setLayout(new BorderLayout());
 		setBackground(Color.BLACK);
@@ -84,8 +86,7 @@ public class MyTunesGUIPanel extends JPanel {
 		down.addActionListener(new UpDownListener());
 		moveButtons.add(up);
 		moveButtons.add(down);
-		JScrollPane scrollPane = new JScrollPane(songList, 
-				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+		JScrollPane scrollPane = new JScrollPane(songList, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		songList.setListData(list.getSongArray());
 		songList.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
@@ -101,27 +102,15 @@ public class MyTunesGUIPanel extends JPanel {
 		addRemove.add(remove);
 		// stuff in CENTER section of layout
 		gridPanel = new JPanel();
-		int sqrt = (int) Math.ceil(Math.sqrt(list.getNumSongs()));
-		gridPanel.setLayout(new GridLayout(sqrt, sqrt));
-		this.add(gridPanel, BorderLayout.CENTER);
+		resetSongGrid();
 		JLabel numClicks = new JLabel();
-		grid = new JButton[(int) sqrt][(int) sqrt];
-		for (int row = 0; row < grid.length; row++) {
-			for (int col = 0; col < grid[row].length; col++) {
-				String buttonName = (String) this.list.getSong(((row * sqrt) + col) % list.getNumSongs()).getTitle();
-				grid[row][col] = new JButton(buttonName);
-				grid[row][col].addActionListener(new SongSquareListener());
-				gridPanel.add(grid[row][col]);
-			}
-		}
 		controlPanel = new JPanel();
 		this.add(controlPanel, BorderLayout.SOUTH);
-		name = new JLabel("None by Noone");
+		name = new JLabel("(nothing) by (nobody)");
 		prev = new JButton("");
 		psAction = new JButton("");
 		next = new JButton("");
 		ImageIcon bicon = new ImageIcon("images/media-skip-backward-32.gif");
-
 		ImageIcon ficon = new ImageIcon("images/media-skip-forward-32.gif");
 		prev.setIcon(bicon);
 		psAction.setIcon(pIcon);
@@ -144,7 +133,7 @@ public class MyTunesGUIPanel extends JPanel {
 		@Override
 		public void valueChanged(ListSelectionEvent event) {
 			// TODO Auto-generated method stub
-			
+
 		}
 
 	}
@@ -160,42 +149,38 @@ public class MyTunesGUIPanel extends JPanel {
 				if (index + 2 > list.getSongArray().length) {
 					index = 0;
 					list.stop();
-					list.playSong(index);
+					songList.setSelectedIndex(index);
+					startTimer();
 				} else {
 					index++;
 					list.stop();
-					list.playSong(index);
+					songList.setSelectedIndex(index);
+					startTimer();
 				}
 			} else if (event.getSource() == psAction) {
-				if(list.getPlaying() != null){
-					list.stop();
-					psAction.setIcon(pIcon);
-				}else{
-					list.stop();
-					list.playSong(index);
-					psAction.setIcon(sIcon);
+				if (list.getPlaying() != null) {
+					stopTimer();
+				} else {
+					startTimer();
 				}
 			} else {
-				if(index - 1 < 0) {
+				if (index - 1 < 0) {
 					list.stop();
 					index = list.getSongArray().length - 1;
-					list.playSong(index);
-				}else {
+					songList.setSelectedIndex(index);
+					startTimer();
+				} else {
 					list.stop();
 					index--;
-					list.playSong(index);
+					songList.setSelectedIndex(index);
+					startTimer();
 				}
 			}
-			songList.setSelectedIndex(index);
-			playingTitle = list.getSongArray()[index].getTitle();
-			playingArtist = list.getSongArray()[index].getArtist();
-			name = new JLabel(playingTitle + " by " + playingArtist);
-			controlPanel.remove(name);
-			controlPanel.add(name);
+
 		}
 
 	}
-	
+
 	private class SongSquareListener implements ActionListener {
 
 		@Override
@@ -205,90 +190,102 @@ public class MyTunesGUIPanel extends JPanel {
 			int sqrt = (int) Math.ceil(Math.sqrt(list.getNumSongs()));
 			for (int row = 0; row < grid.length; row++) {
 				for (int col = 0; col < grid[row].length; col++) {
-					if(grid[row][col] == event.getSource()){
-						index = list.get(((row*sqrt)+col)%list.getSongArray().length);;
+					if (grid[row][col] == event.getSource()) {
+						index = list.get(((row * sqrt) + col) % list.getSongArray().length);
+						;
 					}
 				}
 			}
 			list.stop();
 			songList.setSelectedIndex(index);
-			playingTitle = list.getSongArray()[index].getTitle();
-			playingArtist = list.getSongArray()[index].getArtist();
+			playingTitle = list.getSong(songList.getSelectedIndex()).getTitle();
+			playingArtist = list.getSong(songList.getSelectedIndex()).getArtist();
 			name = new JLabel(playingTitle + " by " + playingArtist);
-			
+
 			list.playSong(index);
 			psAction.setIcon(sIcon);
 		}
-		
+
 	}
-	
+
 	private class UpDownListener implements ActionListener {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			// TODO Auto-generated method stub
-			if(e.getSource() == up){
+			if (e.getSource() == up) {
 				int newIndex = list.moveUp(songList.getSelectedIndex());
 				songList.setListData(list.getSongArray());
 				songList.setSelectedIndex(newIndex);
-			}else {
+				resetSongGrid();
+			} else {
 				int newIndex = list.moveDown(songList.getSelectedIndex());
 				songList.setListData(list.getSongArray());
 				songList.setSelectedIndex(newIndex);
+				resetSongGrid();
 			}
 		}
-		
+
 	}
-	
+
 	private class ARListener implements ActionListener {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			// TODO Auto-generated method stub
-			if(e.getSource() == remove){
+			if (e.getSource() == remove) {
 				int index = songList.getSelectedIndex();
 				list.removeSong(index);
 				songList.setListData(list.getSongArray());
-				if(index > 0){
+				resetSongGrid();
+				if (index > 0) {
 					songList.setSelectedIndex(index);
-				}if(index - 1 < 0){
-					songList.setSelectedIndex(index);
-				}else{
-					songList.setSelectedIndex(index-1);
+					resetSongGrid();
 				}
-			}else {
+				if (index - 1 < 0) {
+					songList.setSelectedIndex(index);
+					resetSongGrid();
+				} else {
+					songList.setSelectedIndex(index - 1);
+					resetSongGrid();
+				}
+			} else {
 				showForm();
+				resetSongGrid();
 			}
 		}
-		
-	}
-	
-	private class TimerListener implements ActionListener {
 
+	}
+
+	private class TimerListener implements ActionListener {
 		@Override
-		public void actionPerformed(ActionEvent arg0) {
-			// TODO Auto-generated method stub
-			if(list.getPlaying() != null){
-				list.stop();
-				psAction.setIcon(pIcon);
-			}else{
-				list.stop();
-				list.playSong(index);
-				psAction.setIcon(sIcon);
+		public void actionPerformed(ActionEvent e) {
+			if (time > 0) {
+				time--;
+				System.out.print(time);
+			} else {
+				stopTimer();
 			}
 		}
-		
 	}
 	
+	private void initTimer(){
+		timer = new Timer(0, new TimerListener());
+		timer.setRepeats(false);
+		
+		timeRemaining = 0;
+	}
+
 	private void showForm() {
 		JPanel addSongInputPanel = new JPanel();
 		addSongInputPanel.setLayout(new BoxLayout(addSongInputPanel, BoxLayout.Y_AXIS));
-		
+
 		JTextField titleField = new JTextField(20);
 		JTextField artistField = new JTextField(20);
+		
 		JTextField playTimeField = new JTextField(4);
 		JTextField filePathField = new JTextField(40);
-		
+
 		addSongInputPanel.add(new JLabel("Song title: "));
 		addSongInputPanel.add(titleField);
 		addSongInputPanel.add(new JLabel("Song artist: "));
@@ -297,43 +294,40 @@ public class MyTunesGUIPanel extends JPanel {
 		addSongInputPanel.add(playTimeField);
 		addSongInputPanel.add(new JLabel("Path to song: "));
 		addSongInputPanel.add(filePathField);
-		
-		int result = JOptionPane.showConfirmDialog(null, addSongInputPanel, "Add User",
-    			JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-		//String title, String artist, int playTime, String filePath
-		
-		if (result == JOptionPane.OK_OPTION)
-		{
+		int result = JOptionPane.showConfirmDialog(null, addSongInputPanel, "Add User", JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE);
+
+		// String title, String artist, int playTime, String filePath
+
+		if (result == JOptionPane.OK_OPTION) {
 			String title = titleField.getText();
 			String artist = artistField.getText();
 			int playTime = 0;
 			String filePath = filePathField.getText();
-			try
-			{
+			try {
 				playTime = Integer.parseInt(playTimeField.getText());
-				if(playTime <= 0) {
+				if (playTime <= 0) {
 					JOptionPane.showMessageDialog(null, "Song has to be greater than zero(0)");
-					
+
 				}
-			}
-			catch (NumberFormatException e)
-			{
+			} catch (NumberFormatException e) {
 				JOptionPane.showMessageDialog(null, "The play time must be a number");
 			}
-			
+
 			Song newSong = new Song(title, artist, playTime, filePath);
 			list.addSong(newSong);
 			songList.setListData(list.getSongArray());
 			resetSongGrid();
 		}
 	}
-	
-	private void resetSongGrid(){
-		gridPanel.removeAll();
-		
-		int sqrt = (int) Math.ceil(Math.sqrt(list.getNumSongs()));
+
+	private void resetSongGrid() {
+		this.remove(gridPanel);
+		sqrt = (int) Math.ceil(Math.sqrt(list.getNumSongs()));
+		gridPanel = new JPanel();
 		gridPanel.setLayout(new GridLayout(sqrt, sqrt));
+		this.add(gridPanel);
 		grid = new JButton[(int) sqrt][(int) sqrt];
 		for (int row = 0; row < grid.length; row++) {
 			for (int col = 0; col < grid[row].length; col++) {
@@ -342,6 +336,37 @@ public class MyTunesGUIPanel extends JPanel {
 				grid[row][col].addActionListener(new SongSquareListener());
 				gridPanel.add(grid[row][col]);
 			}
+		}
+		this.revalidate();
+	}
+
+	private void stopTimer() {
+		timer.stop();
+		list.stop();
+		psAction.setIcon(pIcon);
+		controlPanel.remove(name);
+		name = new JLabel("(nothing) by (nobody)");
+		controlPanel.add(name);
+		controlPanel.revalidate();
+	}
+
+	private void startTimer() {
+		time = list.getSong(songList.getSelectedIndex()).getPlayTime() * 1000;
+		timeRemaining = time*1000;
+		if (timeRemaining < 0) {
+			JOptionPane.showMessageDialog(null, "Invalid time!");
+		} else {
+			timer.setInitialDelay(timeRemaining);
+			timer.start();
+			list.stop();
+			playingTitle = list.getSong(songList.getSelectedIndex()).getTitle();
+			playingArtist = list.getSong(songList.getSelectedIndex()).getArtist();
+			controlPanel.remove(name);
+			name = new JLabel(playingTitle + " by " + playingArtist);
+			controlPanel.add(name);
+			controlPanel.revalidate();
+			list.playSong(index);
+			psAction.setIcon(sIcon);
 		}
 	}
 
