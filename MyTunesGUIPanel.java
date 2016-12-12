@@ -30,7 +30,6 @@ public class MyTunesGUIPanel extends JPanel {
 	private String playingArtist;
 	private int sqrt;
 	private int time;
-	private int timeRemaining;
 
 	private JList<Song> songList = new JList<Song>();
 
@@ -260,20 +259,18 @@ public class MyTunesGUIPanel extends JPanel {
 	private class TimerListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			if (time > 0) {
-				time--;
-				System.out.print(time);
-			} else {
-				stopTimer();
-			}
+			list.stop();
+			psAction.setIcon(pIcon);
+			controlPanel.remove(name);
+			name = new JLabel("(nothing) by (nobody)");
+			controlPanel.add(name);
+			controlPanel.revalidate();
 		}
 	}
 	
 	private void initTimer(){
 		timer = new Timer(0, new TimerListener());
 		timer.setRepeats(false);
-		
-		timeRemaining = 0;
 	}
 
 	private void showForm() {
@@ -352,11 +349,10 @@ public class MyTunesGUIPanel extends JPanel {
 
 	private void startTimer() {
 		time = list.getSong(songList.getSelectedIndex()).getPlayTime() * 1000;
-		timeRemaining = time*1000;
-		if (timeRemaining < 0) {
+		if (time < 0) {
 			JOptionPane.showMessageDialog(null, "Invalid time!");
 		} else {
-			timer.setInitialDelay(timeRemaining);
+			timer.setInitialDelay(time);
 			timer.start();
 			list.stop();
 			playingTitle = list.getSong(songList.getSelectedIndex()).getTitle();
